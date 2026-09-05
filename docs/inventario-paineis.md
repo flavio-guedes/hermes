@@ -169,7 +169,7 @@
 | 37 | Cerebro — Hermes Ecosystem Radar | `/Users/mac/HermesWorkspace/cerebro/index.html` | ferramenta/agente | ✅ |
 | 38 | EPQ · Mapeamento Pedagógico | `/Users/mac/HermesWorkspace/cerebro/mapeamento-pedagogico.html` | ferramenta/agente | ✅ |
 | 39 | Job Hunter Command Center — Hermes | `/Users/mac/HermesWorkspace/command-center/index.html` | ferramenta/agente | ✅ |
-| 40 | EPQ · CRM | `/Users/mac/HermesWorkspace/crm/CRM.html` | crm | ✅ |
+| 40 | EPQ · CRM | `/Users/mac/HermesWorkspace/crm/crm.html` | crm | ✅ |
 | 41 | EPQ · Administração | `/Users/mac/HermesWorkspace/crm/admin.html` | crm | ✅ |
 | 42 | EPQ · Alterar senha | `/Users/mac/HermesWorkspace/crm/change-password.html` | crm | ✅ |
 | 43 | EPQ · Acesso Restrito | `/Users/mac/HermesWorkspace/crm/login.html` | crm | ✅ |
