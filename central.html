@@ -1,0 +1,2368 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HERMES — Control Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+
+/* ══════════════════════════════════════════
+   TOKENS — HERMES dark / mint / futurista
+══════════════════════════════════════════ */
+:root {
+  --bg:        #080b0a;
+  --surface:   #0d1311;
+  --card:      #101614;
+  --border:    rgba(140,255,215,0.10);
+  --border-l:  rgba(140,255,215,0.06);
+
+  --ink-1:     #f2f7f5;
+  --ink-2:     #8fa19a;
+  --ink-3:     #55635d;
+
+  --accent:    #3ee8b0;
+  --accent-2:  #7ef7d4;
+  --accent-bg: rgba(62,232,176,0.07);
+  --accent-b:  rgba(62,232,176,0.28);
+  --grad-fade: linear-gradient(90deg, var(--accent), transparent);
+  --grad-text: linear-gradient(100deg, #ffffff 10%, var(--accent-2) 60%, var(--accent) 100%);
+  --grad-card: linear-gradient(165deg, rgba(255,255,255,0.025), rgba(255,255,255,0));
+
+  --working:   #3ee8b0;
+  --working-bg:rgba(62,232,176,0.07);
+  --working-b: rgba(62,232,176,0.28);
+
+  --waiting:   #f2b84f;
+  --waiting-bg:rgba(242,184,79,0.07);
+  --waiting-b: rgba(242,184,79,0.26);
+
+  --blocked:   #ff6b6b;
+  --blocked-bg:rgba(255,107,107,0.07);
+  --blocked-b: rgba(255,107,107,0.26);
+
+  --review:    #b794f6;
+  --review-bg: rgba(183,148,246,0.07);
+  --review-b:  rgba(183,148,246,0.26);
+
+  --available: #57c7f0;
+  --available-bg:rgba(87,199,240,0.07);
+  --available-b: rgba(87,199,240,0.26);
+
+  --done:      #55635d;
+  --done-bg:   rgba(255,255,255,0.02);
+
+  --p0: #ff6b6b; --p0-bg: rgba(255,107,107,0.07);
+  --p1: #f2b84f; --p1-bg: rgba(242,184,79,0.07);
+  --p2: #57c7f0; --p2-bg: rgba(87,199,240,0.07);
+  --p3: #55635d; --p3-bg: rgba(255,255,255,0.02);
+
+  --font:  'Space Grotesk', system-ui, sans-serif;
+  --mono:  'Space Mono', monospace;
+
+  --r: 12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+
+body {
+  font-family: var(--font);
+  background:
+    radial-gradient(ellipse 900px 500px at 0% 0%, rgba(62,232,176,0.06), transparent 60%),
+    radial-gradient(ellipse 700px 400px at 100% 100%, rgba(126,247,212,0.04), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--ink-1);
+  min-height: 100vh;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ══════════════════════════════════════════
+   LAYOUT
+══════════════════════════════════════════ */
+.app {
+  display: grid;
+  grid-template-columns: 234px 1fr;
+  grid-template-rows: 50px 1fr;
+  height: 100vh;
+  grid-template-areas:
+    "topbar topbar"
+    "sidebar main";
+}
+
+/* ── TOPBAR ─────────────────────────────── */
+.topbar {
+  grid-area: topbar;
+  background: var(--card);
+  border-bottom: 1px solid var(--border-l);
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  gap: 18px;
+  position: relative;
+  z-index: 50;
+}
+
+.brand {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brand-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px 1px rgba(62,232,176,0.6);
+  animation: blink 2.4s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%,100% { opacity:1; }
+  50%      { opacity:0.3; }
+}
+
+.topbar-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pill-green   { background: var(--working-bg); color: var(--working); border: 1px solid var(--working-b); }
+.pill-amber   { background: var(--waiting-bg); color: var(--waiting); border: 1px solid var(--waiting-b); }
+.pill-red     { background: var(--blocked-bg); color: var(--blocked); border: 1px solid var(--blocked-b); }
+
+.pill-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.live-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.live-tag strong { color: var(--working); }
+
+.nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg);
+  padding: 3px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+}
+
+.nav-tab {
+  padding: 5px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.12s;
+  white-space: nowrap;
+  border: none;
+  background: transparent;
+  font-family: var(--font);
+}
+
+.nav-tab:hover { color: var(--ink-1); background: var(--surface); }
+
+.nav-tab.active {
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--border-l) inset;
+}
+
+/* ── SIDEBAR ─────────────────────────────── */
+.sidebar {
+  grid-area: sidebar;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px 0;
+}
+
+.sidebar-section {
+  margin-bottom: 8px;
+}
+
+.sidebar-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 16px 6px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.1s;
+  border-left: 2px solid transparent;
+}
+
+.sidebar-item:hover { color: var(--ink-1); background: var(--surface); }
+
+.sidebar-item.active {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
+.sidebar-badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 100px;
+}
+
+.badge-working  { background: var(--working-bg);  color: var(--working); }
+.badge-amber    { background: var(--waiting-bg);  color: var(--waiting); }
+.badge-red      { background: var(--blocked-bg);  color: var(--blocked); }
+.badge-neutral  { background: var(--bg); color: var(--ink-3); }
+
+/* sidebar item icon/text split (for collapse) */
+.si-icon { width: 16px; text-align: center; flex-shrink: 0; }
+.si-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── SIDEBAR COLLAPSE ─────────────────────── */
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin: 0 auto 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--ink-2);
+  transition: all 0.12s;
+}
+.sidebar-toggle:hover { background: var(--surface); border-color: var(--accent-b); color: var(--accent); }
+.toggle-icon { font-size: 10px; display: inline-block; transition: transform 0.18s ease; }
+
+.app { transition: grid-template-columns 0.18s ease; }
+.app.sidebar-collapsed { grid-template-columns: 60px 1fr; }
+.app.sidebar-collapsed .sidebar-label,
+.app.sidebar-collapsed .si-text,
+.app.sidebar-collapsed .sidebar-badge { display: none; }
+.app.sidebar-collapsed .sidebar-item { justify-content: center; gap: 0; padding: 9px 0; }
+.app.sidebar-collapsed .sidebar-toggle .toggle-icon { transform: rotate(180deg); }
+.app.sidebar-collapsed .sidebar-section { display: flex; flex-direction: column; align-items: center; }
+
+/* ── MAIN ─────────────────────────────────── */
+.main {
+  grid-area: main;
+  overflow-y: auto;
+}
+
+/* ── VIEWS ─────────────────────────────────── */
+.view { display: none; }
+.view.active { display: block; }
+
+.view-inner {
+  max-width: 1200px;
+  padding: 24px 28px 40px;
+}
+
+/* ── PAGE HEADER ────────────────────────────── */
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 600;
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+  display: inline-block;
+}
+
+.page-sub {
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+/* ══════════════════════════════════════════
+   METRICS BAR (compact stat strip)
+══════════════════════════════════════════ */
+.stat-strip {
+  display: flex;
+  align-items: stretch;
+  background: var(--grad-card), var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.stat-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-right: 1px solid var(--border-l);
+  transition: background 0.12s;
+}
+
+.stat-card:last-child { border-right: none; }
+.stat-card:hover { background: var(--surface); }
+
+.stat-icon {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 transparent;
+}
+
+.stat-val.c-green ~ .stat-icon,
+.stat-card:has(.stat-val.c-green) .stat-icon   { background: var(--working); }
+.stat-card:has(.stat-val.c-amber) .stat-icon   { background: var(--waiting); }
+.stat-card:has(.stat-val.c-red) .stat-icon     { background: var(--blocked); }
+.stat-card:has(.stat-val.c-violet) .stat-icon  { background: var(--review); }
+.stat-card:has(.stat-val.c-blue) .stat-icon    { background: var(--available); }
+
+.stat-text { display: flex; flex-direction: column-reverse; gap: 1px; line-height: 1; }
+
+.stat-val {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink-1);
+  letter-spacing: -0.01em;
+  font-family: var(--mono);
+}
+
+.stat-val.c-green   { color: var(--working); }
+.stat-val.c-amber   { color: var(--waiting); }
+.stat-val.c-red     { color: var(--blocked); }
+.stat-val.c-violet  { color: var(--review); }
+.stat-val.c-blue    { color: var(--available); }
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+  letter-spacing: 0.01em;
+}
+
+/* ══════════════════════════════════════════
+   AGENT CARDS — FOCO PRINCIPAL
+══════════════════════════════════════════ */
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.agent-card {
+  background: var(--grad-card), var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 18px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.agent-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 1.5px;
+  opacity: 0.85;
+}
+
+.agent-card.s-working::after  { background: linear-gradient(90deg, var(--working), transparent); }
+.agent-card.s-waiting::after  { background: linear-gradient(90deg, var(--waiting), transparent); }
+.agent-card.s-blocked::after  { background: linear-gradient(90deg, var(--blocked), transparent); }
+.agent-card.s-review::after   { background: linear-gradient(90deg, var(--review), transparent); }
+.agent-card.s-available::after{ background: linear-gradient(90deg, var(--border), transparent); }
+
+.agent-card:hover { box-shadow: 0 4px 24px rgba(62,232,176,0.06); border-color: var(--accent-b); }
+
+.agent-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.agent-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink-1);
+  letter-spacing: -0.01em;
+}
+
+.agent-role-text {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* STATUS CHIP */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.chip.s-working  { background: var(--working-bg);  color: var(--working);  border: 1px solid var(--working-b); }
+.chip.s-waiting  { background: var(--waiting-bg);  color: var(--waiting);  border: 1px solid var(--waiting-b); }
+.chip.s-blocked  { background: var(--blocked-bg);  color: var(--blocked);  border: 1px solid var(--blocked-b); }
+.chip.s-review   { background: var(--review-bg);   color: var(--review);   border: 1px solid var(--review-b); }
+.chip.s-available{ background: var(--available-bg);color: var(--available);border: 1px solid var(--available-b); }
+.chip.s-offline  { background: var(--done-bg);     color: var(--done);     border: 1px solid var(--border); }
+.chip.s-done     { background: var(--done-bg);     color: var(--done);     border: 1px solid var(--border); }
+
+/* CURRENT TASK — destaque máximo */
+.task-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 5px;
+}
+
+.task-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-1);
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+
+.task-text.empty {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink-3);
+  font-style: italic;
+}
+
+.agent-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-l);
+}
+
+.agent-priority {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.agent-time {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-family: var(--mono);
+}
+
+/* priority */
+.pchip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: var(--mono);
+}
+.pchip.p0 { background: var(--p0-bg); color: var(--p0); }
+.pchip.p1 { background: var(--p1-bg); color: var(--p1); }
+.pchip.p2 { background: var(--p2-bg); color: var(--p2); }
+.pchip.p3 { background: var(--p3-bg); color: var(--p3); }
+
+/* ══════════════════════════════════════════
+   ACTIVITY FEED
+══════════════════════════════════════════ */
+.panel {
+  background: var(--grad-card), var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+
+.panel-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-l);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+
+.panel-sub {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-left: auto;
+}
+
+.feed-item {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-l);
+  align-items: start;
+  transition: background 0.1s;
+}
+.feed-item:hover { background: var(--surface); }
+.feed-item:last-child { border-bottom: none; }
+
+.feed-time {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-family: var(--mono);
+  padding-top: 1px;
+}
+
+.feed-body { font-size: 14px; color: var(--ink-2); line-height: 1.4; }
+.feed-agent { font-weight: 600; color: var(--ink-1); }
+
+/* ══════════════════════════════════════════
+   KANBAN
+══════════════════════════════════════════ */
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.k-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.k-col-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+  letter-spacing: 0.05em;
+  font-family: var(--mono);
+  text-transform: uppercase;
+}
+
+.k-col-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-3);
+  background: var(--bg);
+  padding: 1px 7px;
+  border-radius: 100px;
+}
+
+.task-k {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: box-shadow 0.12s, border-color 0.12s;
+  border-top: 1.5px solid var(--border);
+}
+
+.task-k:hover { box-shadow: 0 2px 16px rgba(62,232,176,0.06); border-color: var(--accent-b); }
+.task-k.p0-t  { border-top-color: var(--p0); }
+.task-k.p1-t  { border-top-color: var(--p1); }
+.task-k.p2-t  { border-top-color: var(--p2); }
+.task-k.p3-t  { border-top-color: var(--border); }
+
+.task-k-id    { font-size: 11px; color: var(--ink-3); font-family: var(--mono); margin-bottom: 6px; }
+.task-k-title { font-size: 14px; font-weight: 600; color: var(--ink-1); line-height: 1.4; margin-bottom: 10px; }
+
+.task-k-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.task-k-owner { font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.task-k-time  { font-size: 11px; color: var(--ink-3); font-family: var(--mono); }
+
+/* ══════════════════════════════════════════
+   MATRIX TABLE
+══════════════════════════════════════════ */
+.mtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.mtable th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--mono);
+  letter-spacing: 0.07em;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  position: sticky;
+  top: 0;
+}
+
+.mtable td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border-l);
+  color: var(--ink-2);
+  vertical-align: middle;
+}
+
+.mtable tr:hover td { background: var(--surface); }
+
+.mtable td:first-child {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-1);
+}
+
+.mtable td:nth-child(2) {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+/* ══════════════════════════════════════════
+   BLOCKERS / CONFLICTS
+══════════════════════════════════════════ */
+.alert-card {
+  background: var(--grad-card), var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+.alert-card.is-blocked { border-left: 2px solid var(--blocked); }
+.alert-card.is-waiting { border-left: 2px solid var(--waiting); }
+.alert-card.is-conflict{ border-left: 2px solid var(--review); }
+
+.alert-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.alert-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+
+.alert-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-l);
+}
+
+.af-label { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+.af-val   { font-size: 14px; font-weight: 500; color: var(--ink-1); }
+.af-val.c-amber { color: var(--waiting); font-weight: 600; }
+.af-val.c-red   { color: var(--blocked); font-weight: 600; }
+.af-val.c-green { color: var(--working); font-weight: 600; }
+
+/* empty state */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--ink-3);
+}
+.empty-icon { font-size: 32px; margin-bottom: 12px; color: var(--working); }
+.empty-label { font-size: 16px; font-weight: 600; color: var(--working); }
+.empty-sub   { font-size: 13px; color: var(--ink-3); margin-top: 4px; }
+
+/* ══════════════════════════════════════════
+   INFO CARDS (platforms / plugins / mcp)
+══════════════════════════════════════════ */
+.info-card {
+  background: var(--grad-card), var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px 18px;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.info-card:hover { box-shadow: 0 4px 24px rgba(62,232,176,0.06); border-color: var(--accent-b); }
+.info-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.info-name { font-size: 15px; font-weight: 600; color: var(--ink-1); letter-spacing: -0.01em; }
+.info-sub  { font-size: 12px; color: var(--ink-3); margin-top: 2px; font-weight: 500; }
+.info-meta { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--border-l); font-size: 12px; color: var(--ink-3); }
+.info-meta .mono { font-family: var(--mono); }
+
+/* ══════════════════════════════════════════
+   DECISIONS
+══════════════════════════════════════════ */
+.dec-card {
+  background: var(--grad-card), var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  margin-bottom: 10px;
+}
+
+.dec-id    { font-size: 12px; font-family: var(--mono); color: var(--ink-3); margin-bottom: 6px; }
+.dec-topic { font-size: 17px; font-weight: 600; color: var(--ink-1); margin-bottom: 8px; }
+.dec-body  { font-size: 14px; color: var(--ink-2); line-height: 1.6; margin-bottom: 12px; }
+.dec-agents{ font-size: 13px; color: var(--ink-3); font-weight: 500; }
+
+/* ══════════════════════════════════════════
+   HEALTH
+══════════════════════════════════════════ */
+.health-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 48px;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-l);
+}
+.health-row:last-child { border-bottom: none; }
+
+.h-label { font-size: 14px; font-weight: 500; color: var(--ink-1); }
+.h-bar-wrap { height: 3px; background: var(--bg); border-radius: 2px; overflow: hidden; }
+.h-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent-2), var(--working)); transition: width 0.5s ease; }
+.h-bar.warn { background: linear-gradient(90deg, #ffd188, var(--waiting)); }
+.h-bar.crit { background: linear-gradient(90deg, #ff9f9f, var(--blocked)); }
+.h-pct { font-size: 13px; font-weight: 700; color: var(--ink-2); text-align: right; font-family: var(--mono); }
+
+/* ══════════════════════════════════════════
+   ORCHESTRATION
+══════════════════════════════════════════ */
+.orch-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+}
+
+.plan-ol {
+  list-style: none;
+  counter-reset: step;
+}
+
+.plan-li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--border-l);
+  align-items: center;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.plan-li::before {
+  content: counter(step);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-3);
+  font-weight: 700;
+  text-align: center;
+}
+
+.plan-li.is-done { color: var(--ink-3); }
+.plan-li.is-done::before { color: var(--working); }
+.plan-li.is-done span { text-decoration: line-through; }
+
+.plan-li.is-active { color: var(--ink-1); font-weight: 600; background: var(--surface); }
+.plan-li.is-active::before { color: var(--working); }
+
+.del-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--border-l);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.del-row:hover { background: var(--surface); }
+.del-row:last-child { border-bottom: none; }
+
+.del-agents { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.del-from   { color: var(--review); }
+.del-arr    { color: var(--ink-3); }
+.del-to     { color: var(--working); }
+.del-task   { font-size: 13px; color: var(--ink-3); }
+
+/* ══════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════ */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.overlay.open { display: flex; }
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.modal-head {
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border-l);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.modal-agent-name { font-size: 20px; font-weight: 600; color: var(--ink-1); letter-spacing: -0.01em; }
+.modal-agent-role { font-size: 13px; color: var(--ink-3); margin-top: 3px; font-weight: 500; }
+
+.modal-close {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--ink-2);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.1s;
+  font-family: var(--font);
+  flex-shrink: 0;
+}
+.modal-close:hover { background: var(--border); }
+
+.modal-body { padding: 20px 22px; }
+
+.mfield { margin-bottom: 16px; }
+.mfield-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); margin-bottom: 5px; }
+.mfield-val   { font-size: 15px; color: var(--ink-1); font-weight: 500; line-height: 1.4; }
+.mfield-val.big { font-size: 16px; font-weight: 600; }
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag-item { font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 4px; background: var(--bg); color: var(--ink-2); border: 1px solid var(--border); }
+
+.modal-divider { border: none; border-top: 1px solid var(--border-l); margin: 16px 0; }
+
+/* filter bar */
+.filter-bar { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+
+.fbtn {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--ink-2);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.1s;
+}
+.fbtn:hover { border-color: var(--accent-b); color: var(--accent); }
+.fbtn.active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-b); font-weight: 600; }
+
+/* ══════════════════════════════════════════
+   DEV BANNER
+══════════════════════════════════════════ */
+.dev-banner {
+  background: var(--waiting-bg);
+  border: 1px solid var(--waiting-b);
+  border-radius: var(--r);
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--waiting);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ══════════════════════════════════════════
+   2-COL GRID HELPER
+══════════════════════════════════════════ */
+.two-col { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
+
+/* ══════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════ */
+@media (max-width: 960px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 50px auto 1fr; grid-template-areas: "topbar" "sidebar" "main"; }
+  .sidebar { border-right: none; border-bottom: 1px solid var(--border); padding: 8px 0; display: flex; overflow-x: auto; overflow-y: hidden; }
+  .sidebar-section { margin-bottom: 0; display: flex; flex-shrink: 0; }
+  .sidebar-label { display: none; }
+  .sidebar-item { padding: 7px 14px; font-size: 13px; border-left: none; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .sidebar-item.active { border-left: none; border-bottom-color: var(--ink-1); background: var(--surface); }
+  .stat-strip { grid-template-columns: repeat(3, 1fr); }
+  .kanban { grid-template-columns: repeat(2, 1fr); overflow-x: auto; }
+  .two-col { grid-template-columns: 1fr; }
+  .orch-grid { grid-template-columns: 1fr; }
+  .nav-tabs { display: none; }
+  .sidebar-toggle { display: none; }
+  .app.sidebar-collapsed { grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+
+<script>
+// ══════════════════════════════════════════
+// DATA (DEVELOPMENT FIXTURES)
+// ══════════════════════════════════════════
+const DEV = true;
+
+const AGENTS = [
+  { id:'hermes',    name:'Hermes',    role:'Master Orchestrator',    status:'working',   task:'Orquestrando execução do Control Center',      priority:'P0', time:'23:02', skills:['Orchestration','Delegation','Planning','Decision'] },
+  { id:'atlas',     name:'Atlas',     role:'Chief of Staff',         status:'available', task:null,                                            priority:null, time:'22:58', skills:['Strategy','Coordination','Brief'] },
+  { id:'oracle',    name:'Oracle',    role:'Research',               status:'working',   task:'Levantamento de dados de mercado e concorrência',priority:'P1', time:'23:01', skills:['Research','Analysis','Web','Data'] },
+  { id:'nexus',     name:'Nexus',     role:'Frontend / Painéis',     status:'working',   task:'Implementação do Hermes Control Center',         priority:'P0', time:'23:02', skills:['Frontend','UI','GitHub','Dashboards'] },
+  { id:'forge',     name:'Forge',     role:'Architecture',           status:'available', task:null,                                            priority:null, time:'22:45', skills:['Architecture','Systems','APIs','Infra'] },
+  { id:'vector',    name:'Vector',    role:'Data',                   status:'working',   task:'Definindo modelo de métricas operacionais',      priority:'P1', time:'22:59', skills:['Data','Metrics','Analytics','SQL'] },
+  { id:'aegis',     name:'Aegis',     role:'QA',                     status:'review',    task:'Revisando painel atual (index.html)',             priority:'P1', time:'23:00', skills:['QA','Regression','Testing','Audit'] },
+  { id:'sentinel',  name:'Sentinel',  role:'Security',               status:'available', task:null,                                            priority:null, time:'22:30', skills:['Security','Audit','Compliance','Tokens'] },
+  { id:'vanguard',  name:'Vanguard',  role:'UI / Visual',            status:'working',   task:'Direção visual e tipografia do Control Center',  priority:'P1', time:'22:57', skills:['UI Design','Visual','Motion','Style'] },
+  { id:'strategos', name:'Strategos', role:'Roadmap',                status:'available', task:null,                                            priority:null, time:'22:10', skills:['Roadmap','Planning','OKRs','Strategy'] },
+  { id:'muse',      name:'Muse',      role:'UX Writing / Conteúdo',  status:'available', task:null,                                            priority:null, time:'22:20', skills:['Copywriting','UX Writing','Content','Voice'] },
+  { id:'pulse',     name:'Pulse',     role:'Growth',                 status:'available', task:null,                                            priority:null, time:'21:55', skills:['Growth','Marketing','Analytics','Funnels'] },
+];
+
+const TASKS = {
+  backlog:  [
+    { id:'T-007', title:'Integração GitHub Actions',         owner:'Forge',     p:'P1', upd:'22:00' },
+    { id:'T-008', title:'Documentação do sistema Hermes',    owner:'Muse',      p:'P2', upd:'21:30' },
+    { id:'T-009', title:'Roadmap Q4 2026',                   owner:'Strategos', p:'P2', upd:'21:00' },
+  ],
+  assigned: [
+    { id:'T-005', title:'Modelo de métricas operacionais',   owner:'Vector',    p:'P1', upd:'22:50' },
+    { id:'T-006', title:'Direção visual Control Center',     owner:'Vanguard',  p:'P1', upd:'22:45' },
+  ],
+  working:  [
+    { id:'T-001', title:'Hermes Control Center',             owner:'Nexus',     p:'P0', upd:'23:02' },
+    { id:'T-002', title:'Levantamento de dados de mercado',  owner:'Oracle',    p:'P1', upd:'23:01' },
+    { id:'T-003', title:'Orquestração geral do sistema',     owner:'Hermes',    p:'P0', upd:'23:02' },
+  ],
+  review:   [
+    { id:'T-004', title:'Revisão do painel atual',           owner:'Aegis',     p:'P1', upd:'23:00' },
+  ],
+  done:     [
+    { id:'T-000', title:'Auditoria da estrutura /hermes/',   owner:'Hermes',    p:'P0', upd:'22:30' },
+  ],
+};
+
+const EVENTS = [
+  { time:'23:02', agent:'Nexus',    text:'iniciou implementação do Control Center' },
+  { time:'23:01', agent:'Oracle',   text:'atualizou levantamento de dados de mercado' },
+  { time:'23:00', agent:'Aegis',    text:'iniciou revisão do painel atual' },
+  { time:'22:59', agent:'Vector',   text:'definiu modelo de métricas operacionais' },
+  { time:'22:58', agent:'Atlas',    text:'confirmou estrutura de delegação' },
+  { time:'22:57', agent:'Vanguard', text:'enviou direção visual para revisão' },
+  { time:'22:56', agent:'Hermes',   text:'delegou Control Center → Nexus' },
+  { time:'22:55', agent:'Hermes',   text:'delegou direção visual → Vanguard' },
+  { time:'22:54', agent:'Hermes',   text:'delegou modelo de métricas → Vector' },
+  { time:'22:45', agent:'Forge',    text:'revisou arquitetura do projeto' },
+  { time:'22:30', agent:'Hermes',   text:'concluiu auditoria da estrutura /hermes/' },
+];
+
+const BLOCKERS = [
+  {
+    title:'Autenticação GitHub pendente',
+    detail:'Token GitHub não configurado no ambiente local',
+    agent:'Nexus',
+    since:'22:31',
+    impact:'Deploy do Control Center',
+    next:'Autenticar token GitHub',
+  }
+];
+
+const CONFLICTS = [];
+
+const DECISIONS = [
+  { id:'D-001', agents:'Nexus × Vanguard', topic:'Ownership de UI',         body:'Nexus implementa. Vanguard define direção visual e aprova componentes antes do deploy.', status:'RESOLVED' },
+  { id:'D-002', agents:'Forge × Nexus',    topic:'Arquitetura frontend',    body:'Forge define arquitetura técnica do projeto. Nexus implementa sobre a base estabelecida.', status:'RESOLVED' },
+  { id:'D-003', agents:'Hermes → equipe',  topic:'Estética do painel',      body:'Interface clara com fundo cinza claro, tipografia legível, foco em clareza operacional.', status:'RESOLVED' },
+];
+
+const HEALTH = [
+  { label:'Agentes Online',     pct:100 },
+  { label:'Execução de Tarefas',pct:82  },
+  { label:'QA',                 pct:100 },
+  { label:'Segurança',          pct:94  },
+  { label:'Automações',         pct:100 },
+  { label:'Integrações',        pct:71, warn:true },
+];
+
+const PLAN = [
+  { text:'Auditoria do index.html',        done:true },
+  { text:'Mapeamento da arquitetura',      done:true },
+  { text:'Definição do modelo de estado',  done:true },
+  { text:'Implementar Agent Status',       active:true },
+  { text:'Implementar Task Flow',          active:true },
+  { text:'Implementar Live Activity',      active:true },
+  { text:'Implementar Conflicts',          active:false },
+  { text:'Implementar Blockers',           active:false },
+  { text:'Implementar Decision Log',       active:false },
+  { text:'Implementar System Health',      active:false },
+  { text:'Conectar dados reais',           active:false },
+  { text:'QA / Aegis',                     active:false },
+  { text:'Security Review / Sentinel',     active:false },
+  { text:'Publicar',                       active:false },
+];
+
+const DELEGATIONS = [
+  { from:'Flávio', to:'Atlas',    task:'Missão HERMES Control Center' },
+  { from:'Atlas',  to:'Hermes',   task:'Orquestração operacional' },
+  { from:'Hermes', to:'Nexus',    task:'Implementação frontend' },
+  { from:'Hermes', to:'Vanguard', task:'Direção visual' },
+  { from:'Hermes', to:'Vector',   task:'Modelo de métricas' },
+  { from:'Hermes', to:'Aegis',    task:'QA do painel' },
+  { from:'Hermes', to:'Forge',    task:'Revisão arquitetural' },
+];
+
+const ATTENTION = [
+  { title:'Token GitHub expirando',        severity:'red',   detail:'O token de autenticação GitHub usado pelo Nexus expira em 3 dias.' },
+  { title:'Integração Slack instável',     severity:'amber', detail:'3 falhas de reconexão nas últimas 24h — monitorar antes do deploy.' },
+  { title:'Backup semanal atrasado',       severity:'amber', detail:'Última execução há 9 dias, previsto ciclo de 7 dias.' },
+];
+
+const CREDENTIALS = [
+  { name:'GitHub Token',        service:'GitHub',        status:'waiting', value:'ghp_••••••••3f2a', used:'22:31' },
+  { name:'OpenAI API Key',      service:'OpenAI',        status:'working', value:'sk-••••••••91cd', used:'23:01' },
+  { name:'Anthropic API Key',   service:'Anthropic',     status:'working', value:'sk-ant-••••••7b12', used:'23:02' },
+  { name:'Slack Bot Token',     service:'Slack',         status:'blocked', value:'xoxb-••••••••44a1', used:'21:40' },
+  { name:'Google Drive OAuth',  service:'Google Drive',  status:'working', value:'ya29-••••••••0e9f', used:'22:50' },
+  { name:'Notion Integration',  service:'Notion',        status:'available', value:'secret_••••••c31d', used:'—' },
+];
+
+const PLATFORMS = [
+  { name:'GitHub',         role:'Repositórios e deploy',     status:'waiting',   meta:'sincronizado às 22:31' },
+  { name:'Slack',          role:'Comunicação da equipe',      status:'blocked',   meta:'reconectando…' },
+  { name:'Google Drive',   role:'Documentos e arquivos',      status:'working',  meta:'sincronizado às 22:50' },
+  { name:'Notion',         role:'Base de conhecimento',       status:'available',meta:'não sincronizado' },
+  { name:'Gamma',          role:'Apresentações',              status:'available',meta:'conectado' },
+  { name:'Vibe Prospecting',role:'Prospecção B2B',            status:'working',  meta:'sincronizado às 22:40' },
+];
+
+const CRON = [
+  { job:'Backup diário /hermes/',        schedule:'0 3 * * *',   last:'04/09 03:00', next:'06/09 03:00', status:'working' },
+  { job:'Sync métricas operacionais',    schedule:'*/15 * * * *',last:'23:00',       next:'23:15',       status:'working' },
+  { job:'Verificação de credenciais',    schedule:'0 * * * *',   last:'22:00',       next:'00:00',       status:'working' },
+  { job:'Relatório semanal Flávio',      schedule:'0 8 * * 1',   last:'01/09 08:00', next:'08/09 08:00', status:'waiting' },
+  { job:'Limpeza de logs',               schedule:'0 0 * * 0',   last:'31/08 00:00', next:'07/09 00:00', status:'available' },
+];
+
+const SESSIONS = [
+  { name:'Hermes · orquestração',   origin:'CLI local',      started:'22:00', last:'23:02', status:'working' },
+  { name:'Nexus · implementação',   origin:'VS Code',        started:'22:56', last:'23:02', status:'working' },
+  { name:'Flávio · painel web',     origin:'Navegador',      started:'22:40', last:'22:59', status:'review' },
+  { name:'Aegis · QA',              origin:'CLI local',      started:'23:00', last:'23:00', status:'review' },
+  { name:'Sentinel · auditoria',    origin:'CLI local',      started:'20:15', last:'22:30', status:'available' },
+];
+
+const PLUGINS = [
+  { name:'docx',                role:'Geração de documentos Word',    status:'working',   meta:'v1' },
+  { name:'pptx',                role:'Geração de apresentações',      status:'working',   meta:'v1' },
+  { name:'xlsx',                role:'Planilhas e modelos',           status:'working',   meta:'v1' },
+  { name:'frontend-design',     role:'Diretrizes visuais de UI',      status:'working',   meta:'v1' },
+  { name:'skill-creator',       role:'Criação e ajuste de skills',    status:'available', meta:'v1' },
+  { name:'import-memory',       role:'Importação de memória externa', status:'available', meta:'v1' },
+];
+
+const WEBHOOKS = [
+  { event:'agent.delegated',   endpoint:'/hooks/delegation',   status:'working', last:'22:56' },
+  { event:'task.completed',    endpoint:'/hooks/task-done',    status:'working', last:'22:30' },
+  { event:'conflict.raised',   endpoint:'/hooks/conflict',     status:'available', last:'—' },
+  { event:'blocker.opened',    endpoint:'/hooks/blocker',      status:'waiting', last:'22:31' },
+];
+
+const MCP_SERVERS = [
+  { name:'Google Drive',       role:'Arquivos e documentos',    status:'working',  meta:'11 ferramentas' },
+  { name:'Gamma',              role:'Apresentações e páginas',  status:'working',  meta:'19 ferramentas' },
+  { name:'Vibe Prospecting',   role:'Prospecção B2B',           status:'available',meta:'14 ferramentas' },
+  { name:'Gmail',              role:'E-mail',                   status:'available',meta:'não configurado' },
+  { name:'Google Calendar',    role:'Agenda',                   status:'available',meta:'não configurado' },
+];
+
+const SERVICES = [
+  { name:'hermes-core.service',      port:'—',     status:'working', uptime:'6h 12m' },
+  { name:'metrics-collector',        port:'9187',  status:'working', uptime:'6h 09m' },
+  { name:'webhook-listener',         port:'8080',  status:'working', uptime:'3h 44m' },
+  { name:'local-cron-runner',        port:'—',     status:'working', uptime:'6h 12m' },
+  { name:'sandbox-preview',          port:'4173',  status:'available', uptime:'parado' },
+];
+
+// ── computed ──────────────────────────────
+function getStats() {
+  return {
+    total:     AGENTS.length,
+    working:   AGENTS.filter(a => a.status === 'working').length,
+    waiting:   AGENTS.filter(a => a.status === 'waiting').length,
+    blocked:   AGENTS.filter(a => a.status === 'blocked').length,
+    review:    AGENTS.filter(a => a.status === 'review').length,
+    available: AGENTS.filter(a => a.status === 'available').length,
+    activeTasks: TASKS.working.length + TASKS.assigned.length,
+    conflicts: CONFLICTS.length,
+    blockers:  BLOCKERS.length,
+  };
+}
+</script>
+
+<!-- LAYOUT ─────────────────────────────── -->
+<div class="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      HERMES
+    </div>
+
+    <div style="height:22px;width:1px;background:var(--border)"></div>
+
+    <div class="nav-tabs" id="main-tabs">
+      <button class="nav-tab active"  onclick="showView('overview')">Visão Geral</button>
+      <button class="nav-tab"         onclick="showView('team')">Agentes</button>
+      <button class="nav-tab"         onclick="showView('tasks')">Tarefas</button>
+      <button class="nav-tab"         onclick="showView('orchestration')">Orquestração</button>
+      <button class="nav-tab"         onclick="showView('matrix')">Matrix</button>
+    </div>
+
+    <div class="topbar-right">
+      <div class="live-tag">
+        <strong>LIVE</strong>&nbsp;·&nbsp;<span id="last-update">23:02:14</span>
+      </div>
+      <div id="topbar-blocker-pill"></div>
+      <div id="topbar-conflict-pill"></div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" title="Recolher menu">
+      <span class="toggle-icon">◀</span>
+    </button>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Principal</div>
+      <div class="sidebar-item active" onclick="showView('overview')" title="Visão Geral">
+        <span class="si-icon">◈</span><span class="si-text">Visão Geral</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('team')" title="Agentes">
+        <span class="si-icon">◉</span><span class="si-text">Agentes</span>
+        <span class="sidebar-badge badge-working" id="sb-working">—</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('tasks')" title="Tarefas">
+        <span class="si-icon">▣</span><span class="si-text">Tarefas</span>
+        <span class="sidebar-badge badge-working" id="sb-tasks">—</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('orchestration')" title="Orquestração">
+        <span class="si-icon">◎</span><span class="si-text">Orquestração</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('matrix')" title="Matrix">
+        <span class="si-icon">▤</span><span class="si-text">Matrix</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Alertas</div>
+      <div class="sidebar-item" onclick="showView('conflicts')" title="Conflitos">
+        <span class="si-icon">⚠</span><span class="si-text">Conflitos</span>
+        <span class="sidebar-badge badge-neutral" id="sb-conflicts">—</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('blockers')" title="Blockers">
+        <span class="si-icon">◍</span><span class="si-text">Blockers</span>
+        <span class="sidebar-badge badge-amber" id="sb-blockers">—</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('attention')" title="Pontos de atenção">
+        <span class="si-icon">✦</span><span class="si-text">Pontos de atenção</span>
+        <span class="sidebar-badge badge-red" id="sb-attention">—</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Integrações &amp; Operações</div>
+      <div class="sidebar-item" onclick="showView('credentials')" title="Credenciais configuradas">
+        <span class="si-icon">⚿</span><span class="si-text">Credenciais configuradas</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('platforms')" title="Plataformas conectadas">
+        <span class="si-icon">⇄</span><span class="si-text">Plataformas conectadas</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('cron')" title="Cron jobs">
+        <span class="si-icon">◷</span><span class="si-text">Cron jobs</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('sessions')" title="Sessões">
+        <span class="si-icon">◐</span><span class="si-text">Sessões</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('plugins')" title="Plugins">
+        <span class="si-icon">◫</span><span class="si-text">Plugins</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('tasks')" title="Kanban">
+        <span class="si-icon">▦</span><span class="si-text">Kanban</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('webhooks')" title="Webhooks">
+        <span class="si-icon">↯</span><span class="si-text">Webhooks</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('mcp')" title="MCP">
+        <span class="si-icon">◈</span><span class="si-text">MCP</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('services')" title="Serviços adicionais ativos na máquina">
+        <span class="si-icon">⚙</span><span class="si-text">Serviços da máquina</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Registro</div>
+      <div class="sidebar-item" onclick="showView('decisions')" title="Decisões">
+        <span class="si-icon">▪</span><span class="si-text">Decisões</span>
+        <span class="sidebar-badge badge-working">3</span>
+      </div>
+      <div class="sidebar-item" onclick="showView('system')" title="Sistema">
+        <span class="si-icon">◦</span><span class="si-text">Sistema</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ═══ OVERVIEW ══════════════════════ -->
+    <div id="view-overview" class="view active">
+      <div class="view-inner">
+        <div class="dev-banner">⚠ Dados de desenvolvimento — substituir por APIs reais quando disponíveis</div>
+
+        <div class="page-header">
+          <div class="page-title">Visão Geral</div>
+          <div class="page-sub">Status operacional do sistema HERMES em tempo real</div>
+        </div>
+
+        <!-- STAT STRIP -->
+        <div class="stat-strip" id="stat-strip">
+          <div class="stat-card">
+            <span class="stat-icon"></span>
+            <div class="stat-text">
+              <div class="stat-label">Agentes</div>
+              <div class="stat-val" id="s-total">12</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon"></span>
+            <div class="stat-text">
+              <div class="stat-label">Trabalhando</div>
+              <div class="stat-val c-green" id="s-working">—</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon"></span>
+            <div class="stat-text">
+              <div class="stat-label">Aguardando</div>
+              <div class="stat-val c-amber" id="s-waiting">—</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon"></span>
+            <div class="stat-text">
+              <div class="stat-label">Bloqueados</div>
+              <div class="stat-val c-red" id="s-blocked">—</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon"></span>
+            <div class="stat-text">
+              <div class="stat-label">Tarefas Ativas</div>
+              <div class="stat-val c-violet" id="s-tasks">—</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon"></span>
+            <div class="stat-text">
+              <div class="stat-label">Conflitos</div>
+              <div class="stat-val" id="s-conflicts">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AGENTS + FEED -->
+        <div class="two-col">
+          <div>
+            <div style="margin-bottom:12px;display:flex;align-items:baseline;gap:10px;">
+              <span style="font-size:15px;font-weight:700;color:var(--ink-1)">Status dos Agentes</span>
+              <span style="font-size:13px;color:var(--ink-3)">clique para detalhes</span>
+            </div>
+            <div class="agent-grid" id="agent-grid-ov"></div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <!-- LIVE ACTIVITY -->
+            <div class="panel">
+              <div class="panel-head">
+                <span class="panel-title">Atividade Recente</span>
+                <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--working);">
+                  <div class="brand-dot" style="width:6px;height:6px;"></div> LIVE
+                </div>
+              </div>
+              <div id="feed-ov"></div>
+            </div>
+
+            <!-- SYSTEM HEALTH -->
+            <div class="panel">
+              <div class="panel-head"><span class="panel-title">System Health</span></div>
+              <div id="health-ov"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TEAM ═══════════════════════════ -->
+    <div id="view-team" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Agentes</div>
+          <div class="page-sub">12 agentes — clique em qualquer card para ver detalhes</div>
+        </div>
+
+        <div class="filter-bar">
+          <button class="fbtn active" onclick="filterTeam(this,'all')">Todos</button>
+          <button class="fbtn" onclick="filterTeam(this,'working')">Trabalhando</button>
+          <button class="fbtn" onclick="filterTeam(this,'review')">Em revisão</button>
+          <button class="fbtn" onclick="filterTeam(this,'waiting')">Aguardando</button>
+          <button class="fbtn" onclick="filterTeam(this,'blocked')">Bloqueados</button>
+          <button class="fbtn" onclick="filterTeam(this,'available')">Disponível</button>
+        </div>
+
+        <div class="agent-grid" id="agent-grid-team"></div>
+      </div>
+    </div>
+
+    <!-- ═══ TASKS ══════════════════════════ -->
+    <div id="view-tasks" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Tarefas</div>
+          <div class="page-sub">Kanban operacional — <span id="task-count-label">—</span> tarefas ativas</div>
+        </div>
+        <div class="kanban" id="kanban"></div>
+      </div>
+    </div>
+
+    <!-- ═══ ORCHESTRATION ══════════════════ -->
+    <div id="view-orchestration" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Orquestração</div>
+          <div class="page-sub">Visão do Hermes — objetivo, plano e delegações ativas</div>
+        </div>
+
+        <div class="orch-grid">
+          <div style="display:flex;flex-direction:column;gap:14px;">
+
+            <!-- OBJETIVO -->
+            <div class="panel">
+              <div class="panel-head">
+                <span class="panel-title">Objetivo Atual</span>
+                <span class="pchip p0">P0</span>
+              </div>
+              <div style="padding:18px;font-size:18px;font-weight:700;color:var(--ink-1);letter-spacing:-0.01em;">
+                Build HERMES Control Center
+              </div>
+            </div>
+
+            <!-- PLANO -->
+            <div class="panel">
+              <div class="panel-head"><span class="panel-title">Plano de Execução</span></div>
+              <ol class="plan-ol" id="plan-ol"></ol>
+            </div>
+
+            <!-- DELEGAÇÕES -->
+            <div class="panel">
+              <div class="panel-head"><span class="panel-title">Delegações Ativas</span></div>
+              <div id="del-list"></div>
+            </div>
+          </div>
+
+          <!-- UTILIZAÇÃO -->
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="panel">
+              <div class="panel-head"><span class="panel-title">Utilização dos Agentes</span></div>
+              <div id="util-list"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <span class="panel-title">Tarefas Bloqueadas</span>
+                <span id="bl-count" class="sidebar-badge badge-amber">—</span>
+              </div>
+              <div id="blocked-orch"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MATRIX ═════════════════════════ -->
+    <div id="view-matrix" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Matrix</div>
+          <div class="page-sub">Tabela completa — todos os agentes e seus estados atuais</div>
+        </div>
+        <div class="panel">
+          <table class="mtable">
+            <thead>
+              <tr>
+                <th>AGENTE</th>
+                <th>FUNÇÃO</th>
+                <th>STATUS</th>
+                <th>TAREFA ATUAL</th>
+                <th>PRIORIDADE</th>
+                <th>ÚLTIMA ATIVIDADE</th>
+              </tr>
+            </thead>
+            <tbody id="matrix-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CONFLICTS ══════════════════════ -->
+    <div id="view-conflicts" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Conflitos</div>
+          <div class="page-sub" id="conflict-sub">monitoramento ativo</div>
+        </div>
+        <div id="conflict-list"></div>
+      </div>
+    </div>
+
+    <!-- ═══ BLOCKERS ═══════════════════════ -->
+    <div id="view-blockers" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Blockers</div>
+          <div class="page-sub">Impedimentos que precisam de ação</div>
+        </div>
+        <div id="blocker-list"></div>
+      </div>
+    </div>
+
+    <!-- ═══ ATTENTION ══════════════════════ -->
+    <div id="view-attention" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Pontos de atenção</div>
+          <div class="page-sub" id="attention-sub">itens que merecem revisão</div>
+        </div>
+        <div id="attention-list"></div>
+      </div>
+    </div>
+
+    <!-- ═══ CREDENTIALS ═════════════════════ -->
+    <div id="view-credentials" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Credenciais configuradas</div>
+          <div class="page-sub">Chaves de API, tokens e segredos disponíveis no ambiente</div>
+        </div>
+        <div class="panel">
+          <table class="mtable">
+            <thead>
+              <tr>
+                <th>CREDENCIAL</th>
+                <th>SERVIÇO</th>
+                <th>STATUS</th>
+                <th>VALOR</th>
+                <th>ÚLTIMO USO</th>
+              </tr>
+            </thead>
+            <tbody id="credentials-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PLATFORMS ═══════════════════════ -->
+    <div id="view-platforms" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Plataformas conectadas</div>
+          <div class="page-sub">Integrações e contas conectadas ao HERMES</div>
+        </div>
+        <div class="agent-grid" id="platforms-grid"></div>
+      </div>
+    </div>
+
+    <!-- ═══ CRON JOBS ═══════════════════════ -->
+    <div id="view-cron" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Cron jobs</div>
+          <div class="page-sub">Tarefas agendadas em execução automática</div>
+        </div>
+        <div class="panel">
+          <table class="mtable">
+            <thead>
+              <tr>
+                <th>JOB</th>
+                <th>AGENDA</th>
+                <th>ÚLTIMA EXECUÇÃO</th>
+                <th>PRÓXIMA EXECUÇÃO</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="cron-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SESSIONS ════════════════════════ -->
+    <div id="view-sessions" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Sessões</div>
+          <div class="page-sub">Sessões ativas de agentes e usuários</div>
+        </div>
+        <div class="panel">
+          <table class="mtable">
+            <thead>
+              <tr>
+                <th>SESSÃO</th>
+                <th>ORIGEM</th>
+                <th>INICIADA EM</th>
+                <th>ÚLTIMA ATIVIDADE</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="sessions-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PLUGINS ═════════════════════════ -->
+    <div id="view-plugins" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Plugins</div>
+          <div class="page-sub">Extensões e skills instaladas no sistema</div>
+        </div>
+        <div class="agent-grid" id="plugins-grid"></div>
+      </div>
+    </div>
+
+    <!-- ═══ WEBHOOKS ════════════════════════ -->
+    <div id="view-webhooks" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Webhooks</div>
+          <div class="page-sub">Endpoints registrados para eventos do sistema</div>
+        </div>
+        <div class="panel">
+          <table class="mtable">
+            <thead>
+              <tr>
+                <th>EVENTO</th>
+                <th>ENDPOINT</th>
+                <th>STATUS</th>
+                <th>ÚLTIMO DISPARO</th>
+              </tr>
+            </thead>
+            <tbody id="webhooks-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MCP ═════════════════════════════ -->
+    <div id="view-mcp" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">MCP</div>
+          <div class="page-sub">Servidores Model Context Protocol conectados</div>
+        </div>
+        <div class="agent-grid" id="mcp-grid"></div>
+      </div>
+    </div>
+
+    <!-- ═══ SERVICES ════════════════════════ -->
+    <div id="view-services" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Serviços adicionais ativos na máquina</div>
+          <div class="page-sub">Processos e serviços em execução no ambiente</div>
+        </div>
+        <div class="panel">
+          <table class="mtable">
+            <thead>
+              <tr>
+                <th>SERVIÇO</th>
+                <th>PORTA</th>
+                <th>STATUS</th>
+                <th>UPTIME</th>
+              </tr>
+            </thead>
+            <tbody id="services-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DECISIONS ══════════════════════ -->
+    <div id="view-decisions" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Decisões</div>
+          <div class="page-sub">Registro de decisões e resoluções de conflito</div>
+        </div>
+        <div id="decision-list"></div>
+      </div>
+    </div>
+
+    <!-- ═══ SYSTEM ══════════════════════════ -->
+    <div id="view-system" class="view">
+      <div class="view-inner">
+        <div class="page-header">
+          <div class="page-title">Sistema</div>
+          <div class="page-sub">Health, arquitetura e estratégia de atualização</div>
+        </div>
+
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-head"><span class="panel-title">Indicadores de Saúde</span></div>
+            <div id="health-sys"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="panel">
+              <div class="panel-head"><span class="panel-title">Arquitetura</span></div>
+              <div style="padding:18px;font-size:13px;color:var(--ink-3);line-height:2.2;font-family:var(--mono);">
+                hermes/<br>
+                ├── core/<br>
+                ├── agents/<br>
+                ├── skills/<br>
+                ├── projects/<br>
+                ├── dashboards/<br>
+                ├── automations/<br>
+                ├── docs/<br>
+                ├── data/<br>
+                └── tests/
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><span class="panel-title">Estratégia de Dados</span></div>
+              <div style="padding:18px;font-size:14px;color:var(--ink-2);line-height:1.8;">
+                <strong style="color:var(--working)">Preferido:</strong> WebSocket event-driven<br>
+                <strong style="color:var(--waiting)">Fallback:</strong> Polling → /api/agents, /api/tasks, /api/events<br>
+                <strong style="color:var(--ink-3)">Atual:</strong> Fixtures de desenvolvimento
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL ──────────────────────────────── -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-agent-name" id="m-name">—</div>
+        <div class="modal-agent-role" id="m-role">—</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="m-status-chip" style="margin-bottom:16px;"></div>
+      <div class="mfield">
+        <div class="mfield-label">Tarefa Atual</div>
+        <div class="mfield-val big" id="m-task">—</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div class="mfield">
+          <div class="mfield-label">Prioridade</div>
+          <div class="mfield-val" id="m-prio">—</div>
+        </div>
+        <div class="mfield">
+          <div class="mfield-label">Última Atividade</div>
+          <div class="mfield-val" id="m-time">—</div>
+        </div>
+      </div>
+      <hr class="modal-divider">
+      <div class="mfield">
+        <div class="mfield-label">Competências</div>
+        <div class="tag-row" id="m-skills"></div>
+      </div>
+      <hr class="modal-divider">
+      <div class="mfield-label" style="margin-bottom:10px;">Atividade Recente</div>
+      <div id="m-activity" style="font-size:14px;color:var(--ink-2);line-height:2;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+const STATUS_LABELS = {
+  working:   'Trabalhando',
+  waiting:   'Aguardando',
+  blocked:   'Bloqueado',
+  review:    'Em revisão',
+  available: 'Disponível',
+  offline:   'Offline',
+  done:      'Concluído',
+};
+
+function chip(status) {
+  const label = STATUS_LABELS[status] || status;
+  return `<span class="chip s-${status}"><span class="chip-dot"></span>${label}</span>`;
+}
+
+function pchip(p) {
+  if (!p) return '<span style="color:var(--ink-3);font-size:12px;">—</span>';
+  return `<span class="pchip ${p.toLowerCase()}">${p}</span>`;
+}
+
+// ══════════════════════════════════════════
+// RENDER: AGENT CARD
+// ══════════════════════════════════════════
+function agentCard(a) {
+  const taskHtml = a.task
+    ? `<div class="task-text">${a.task}</div>`
+    : `<div class="task-text empty">Aguardando delegação</div>`;
+
+  return `
+    <div class="agent-card s-${a.status}" onclick="openModal('${a.id}')">
+      <div class="agent-head">
+        <div>
+          <div class="agent-name">${a.name}</div>
+          <div class="agent-role-text">${a.role}</div>
+        </div>
+        ${chip(a.status)}
+      </div>
+      <div class="task-label">Tarefa atual</div>
+      ${taskHtml}
+      <div class="agent-footer">
+        ${pchip(a.priority)}
+        <div class="agent-time">${a.time}</div>
+      </div>
+    </div>`;
+}
+
+function renderGrid(containerId, filter = 'all') {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const list = filter === 'all' ? AGENTS : AGENTS.filter(a => a.status === filter);
+  el.innerHTML = list.length
+    ? list.map(agentCard).join('')
+    : `<div style="grid-column:1/-1;padding:32px;text-align:center;color:var(--ink-3);font-size:14px;">Nenhum agente com esse status.</div>`;
+}
+
+// ══════════════════════════════════════════
+// RENDER: FEED
+// ══════════════════════════════════════════
+function renderFeed(id, limit = 8) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = EVENTS.slice(0, limit).map(e => `
+    <div class="feed-item">
+      <div class="feed-time">${e.time}</div>
+      <div class="feed-body"><span class="feed-agent">${e.agent}</span> ${e.text}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: HEALTH
+// ══════════════════════════════════════════
+function renderHealth(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = HEALTH.map(h => `
+    <div class="health-row">
+      <div class="h-label">${h.label}</div>
+      <div class="h-bar-wrap">
+        <div class="h-bar ${h.warn ? (h.pct < 50 ? 'crit' : 'warn') : ''}" style="width:${h.pct}%"></div>
+      </div>
+      <div class="h-pct">${h.pct}%</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: KANBAN
+// ══════════════════════════════════════════
+function renderKanban() {
+  const el = document.getElementById('kanban');
+  if (!el) return;
+  const cols = [
+    { key:'backlog',  label:'Backlog'  },
+    { key:'assigned', label:'Atribuído' },
+    { key:'working',  label:'Em execução' },
+    { key:'review',   label:'Em revisão' },
+    { key:'done',     label:'Concluído' },
+  ];
+  el.innerHTML = cols.map(c => {
+    const tasks = TASKS[c.key] || [];
+    const cards = tasks.map(t => {
+      const pcls = t.p === 'P0' ? 'p0-t' : t.p === 'P1' ? 'p1-t' : t.p === 'P2' ? 'p2-t' : 'p3-t';
+      return `
+        <div class="task-k ${pcls}">
+          <div class="task-k-id">${t.id}</div>
+          <div class="task-k-title">${t.title}</div>
+          <div class="task-k-foot">
+            <span class="task-k-owner">${t.owner}</span>
+            <span class="task-k-time">${t.upd}</span>
+          </div>
+        </div>`;
+    }).join('');
+    return `
+      <div>
+        <div class="k-col-head">
+          <span class="k-col-name">${c.label.toUpperCase()}</span>
+          <span class="k-col-count">${tasks.length}</span>
+        </div>
+        ${cards || '<div style="font-size:13px;color:var(--ink-3);padding:8px 0;">vazio</div>'}
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: MATRIX
+// ══════════════════════════════════════════
+function renderMatrix() {
+  const el = document.getElementById('matrix-body');
+  if (!el) return;
+  el.innerHTML = AGENTS.map(a => `
+    <tr style="cursor:pointer" onclick="openModal('${a.id}')">
+      <td>${a.name}</td>
+      <td>${a.role}</td>
+      <td>${chip(a.status)}</td>
+      <td style="${a.task ? '' : 'color:var(--ink-3);font-style:italic;'}">${a.task || 'Disponível'}</td>
+      <td>${pchip(a.priority)}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:var(--ink-3);">${a.time}</td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: CONFLICTS
+// ══════════════════════════════════════════
+function renderConflicts() {
+  const el = document.getElementById('conflict-list');
+  const sub = document.getElementById('conflict-sub');
+  if (!el) return;
+
+  if (!CONFLICTS.length) {
+    if (sub) sub.textContent = '0 conflitos ativos';
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">✓</div>
+        <div class="empty-label">Nenhum conflito ativo</div>
+        <div class="empty-sub">Sistema operando sem conflitos</div>
+      </div>`;
+  } else {
+    if (sub) sub.textContent = `${CONFLICTS.length} conflito(s) ativo(s)`;
+    el.innerHTML = CONFLICTS.map(c => `
+      <div class="alert-card is-conflict">
+        <div class="alert-head">
+          <span style="font-size:12px;font-family:var(--mono);color:var(--review);">${c.id}</span>
+          <span class="alert-title">${c.agents}</span>
+          ${pchip(c.priority)}
+        </div>
+        <div style="font-size:14px;color:var(--ink-2);">${c.topic}</div>
+      </div>`).join('');
+  }
+}
+
+// ══════════════════════════════════════════
+// RENDER: BLOCKERS
+// ══════════════════════════════════════════
+function renderBlockers() {
+  const el = document.getElementById('blocker-list');
+  if (!el) return;
+  if (!BLOCKERS.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">✓</div><div class="empty-label">Nenhum blocker ativo</div></div>`;
+    return;
+  }
+  el.innerHTML = BLOCKERS.map(b => `
+    <div class="alert-card is-blocked">
+      <div class="alert-head">
+        <span style="font-size:20px;color:var(--blocked);">◍</span>
+        <span class="alert-title">${b.title}</span>
+        ${chip('blocked')}
+      </div>
+      <div style="font-size:14px;color:var(--ink-2);">${b.detail}</div>
+      <div class="alert-grid">
+        <div>
+          <div class="af-label">Agente bloqueado</div>
+          <div class="af-val c-red">${b.agent}</div>
+        </div>
+        <div>
+          <div class="af-label">Desde</div>
+          <div class="af-val">${b.since}</div>
+        </div>
+        <div>
+          <div class="af-label">Impacto</div>
+          <div class="af-val">${b.impact}</div>
+        </div>
+        <div style="grid-column:1/-1">
+          <div class="af-label">Próxima ação</div>
+          <div class="af-val c-amber">${b.next}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: DECISIONS
+// ══════════════════════════════════════════
+function renderDecisions() {
+  const el = document.getElementById('decision-list');
+  if (!el) return;
+  el.innerHTML = DECISIONS.map(d => `
+    <div class="dec-card">
+      <div class="dec-id">${d.id} · ${d.agents}</div>
+      <div class="dec-topic">${d.topic}</div>
+      <div class="dec-body">${d.body}</div>
+      ${chip('done')}
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: PLAN
+// ══════════════════════════════════════════
+function renderPlan() {
+  const el = document.getElementById('plan-ol');
+  if (!el) return;
+  el.innerHTML = PLAN.map(p => `
+    <li class="plan-li ${p.done ? 'is-done' : p.active ? 'is-active' : ''}">
+      <span>${p.text}</span>
+    </li>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: DELEGATIONS
+// ══════════════════════════════════════════
+function renderDelegations() {
+  const el = document.getElementById('del-list');
+  if (!el) return;
+  el.innerHTML = DELEGATIONS.map(d => `
+    <div class="del-row">
+      <div>
+        <div class="del-agents">
+          <span class="del-from">${d.from}</span>
+          <span class="del-arr">→</span>
+          <span class="del-to">${d.to}</span>
+        </div>
+        <div class="del-task">${d.task}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: UTILIZATION
+// ══════════════════════════════════════════
+function renderUtil() {
+  const el = document.getElementById('util-list');
+  if (!el) return;
+  el.innerHTML = AGENTS.map(a => {
+    const pct = a.status === 'working' ? 100 : a.status === 'review' ? 60 : a.status === 'waiting' ? 30 : 0;
+    const cls = pct === 0 ? '' : pct < 60 ? 'warn' : '';
+    const color = pct === 100 ? 'var(--working)' : pct === 0 ? 'var(--ink-3)' : 'var(--waiting)';
+    return `
+      <div class="health-row">
+        <div class="h-label">${a.name}</div>
+        <div class="h-bar-wrap"><div class="h-bar ${cls}" style="width:${pct}%"></div></div>
+        <div class="h-pct" style="color:${color}">${pct}%</div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: BLOCKED IN ORCH
+// ══════════════════════════════════════════
+function renderBlockedOrch() {
+  const el = document.getElementById('blocked-orch');
+  const cnt = document.getElementById('bl-count');
+  if (!el) return;
+  if (cnt) cnt.textContent = BLOCKERS.length;
+  if (!BLOCKERS.length) {
+    el.innerHTML = `<div style="padding:14px 18px;font-size:14px;color:var(--working);">✓ Sem tarefas bloqueadas</div>`;
+    return;
+  }
+  el.innerHTML = BLOCKERS.map(b => `
+    <div style="padding:12px 18px;border-bottom:1px solid var(--border-l);">
+      <div style="font-size:14px;font-weight:600;color:var(--blocked);">${b.agent}</div>
+      <div style="font-size:13px;color:var(--ink-3);">${b.detail}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: ATTENTION
+// ══════════════════════════════════════════
+function renderAttention() {
+  const el = document.getElementById('attention-list');
+  const sub = document.getElementById('attention-sub');
+  if (!el) return;
+  if (sub) sub.textContent = `${ATTENTION.length} item(ns) para revisar`;
+  el.innerHTML = ATTENTION.map(a => `
+    <div class="alert-card ${a.severity === 'red' ? 'is-blocked' : 'is-waiting'}">
+      <div class="alert-head">
+        <span style="font-size:18px;color:${a.severity === 'red' ? 'var(--blocked)' : 'var(--waiting)'};">✦</span>
+        <span class="alert-title">${a.title}</span>
+      </div>
+      <div style="font-size:14px;color:var(--ink-2);">${a.detail}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: CREDENTIALS
+// ══════════════════════════════════════════
+function renderCredentials() {
+  const el = document.getElementById('credentials-body');
+  if (!el) return;
+  el.innerHTML = CREDENTIALS.map(c => `
+    <tr>
+      <td>${c.name}</td>
+      <td style="font-size:13px;color:var(--ink-3);">${c.service}</td>
+      <td>${chip(c.status)}</td>
+      <td style="font-family:var(--mono);font-size:13px;">${c.value}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:var(--ink-3);">${c.used}</td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: PLATFORMS / PLUGINS / MCP (info cards)
+// ══════════════════════════════════════════
+function infoCard(item) {
+  return `
+    <div class="info-card">
+      <div class="info-head">
+        <div>
+          <div class="info-name">${item.name}</div>
+          <div class="info-sub">${item.role}</div>
+        </div>
+        ${chip(item.status)}
+      </div>
+      <div class="info-meta"><span>${item.meta}</span></div>
+    </div>`;
+}
+
+function renderPlatforms() {
+  const el = document.getElementById('platforms-grid');
+  if (el) el.innerHTML = PLATFORMS.map(infoCard).join('');
+}
+
+function renderPlugins() {
+  const el = document.getElementById('plugins-grid');
+  if (el) el.innerHTML = PLUGINS.map(infoCard).join('');
+}
+
+function renderMcp() {
+  const el = document.getElementById('mcp-grid');
+  if (el) el.innerHTML = MCP_SERVERS.map(infoCard).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: CRON JOBS
+// ══════════════════════════════════════════
+function renderCron() {
+  const el = document.getElementById('cron-body');
+  if (!el) return;
+  el.innerHTML = CRON.map(c => `
+    <tr>
+      <td>${c.job}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:var(--ink-3);">${c.schedule}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:var(--ink-3);">${c.last}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:var(--ink-3);">${c.next}</td>
+      <td>${chip(c.status)}</td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: SESSIONS
+// ══════════════════════════════════════════
+function renderSessions() {
+  const el = document.getElementById('sessions-body');
+  if (!el) return;
+  el.innerHTML = SESSIONS.map(s => `
+    <tr>
+      <td>${s.name}</td>
+      <td style="font-size:13px;color:var(--ink-3);">${s.origin}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:var(--ink-3);">${s.started}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:var(--ink-3);">${s.last}</td>
+      <td>${chip(s.status)}</td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: WEBHOOKS
+// ══════════════════════════════════════════
+function renderWebhooks() {
+  const el = document.getElementById('webhooks-body');
+  if (!el) return;
+  el.innerHTML = WEBHOOKS.map(w => `
+    <tr>
+      <td style="font-family:var(--mono);font-size:13px;">${w.event}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:var(--ink-3);">${w.endpoint}</td>
+      <td>${chip(w.status)}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:var(--ink-3);">${w.last}</td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════
+// RENDER: SERVICES
+// ══════════════════════════════════════════
+function renderServices() {
+  const el = document.getElementById('services-body');
+  if (!el) return;
+  el.innerHTML = SERVICES.map(s => `
+    <tr>
+      <td>${s.name}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:var(--ink-3);">${s.port}</td>
+      <td>${chip(s.status)}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:var(--ink-3);">${s.uptime}</td>
+    </tr>`).join('');
+}
+
+// ══════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════
+function renderStats() {
+  const s = getStats();
+  document.getElementById('s-total').textContent    = s.total;
+  document.getElementById('s-working').textContent  = s.working;
+  document.getElementById('s-waiting').textContent  = s.waiting;
+  document.getElementById('s-blocked').textContent  = s.blocked;
+  document.getElementById('s-tasks').textContent    = s.activeTasks;
+  document.getElementById('s-conflicts').textContent= s.conflicts;
+
+  const sbw = document.getElementById('sb-working');
+  const sbt = document.getElementById('sb-tasks');
+  const sbc = document.getElementById('sb-conflicts');
+  const sbb = document.getElementById('sb-blockers');
+  const sba = document.getElementById('sb-attention');
+  if (sbw) sbw.textContent = s.working;
+  if (sbt) sbt.textContent = s.activeTasks;
+  if (sbc) { sbc.textContent = s.conflicts; if (s.conflicts > 0) sbc.className = 'sidebar-badge badge-red'; }
+  if (sbb) sbb.textContent = s.blockers;
+  if (sba) sba.textContent = ATTENTION.length;
+
+  const tclabel = document.getElementById('task-count-label');
+  if (tclabel) tclabel.textContent = s.activeTasks;
+
+  // topbar pills
+  const bp = document.getElementById('topbar-blocker-pill');
+  if (bp && s.blockers > 0) bp.innerHTML = `<span class="status-pill pill-amber"><span class="pill-dot"></span>${s.blockers} Blocker</span>`;
+
+  const cp = document.getElementById('topbar-conflict-pill');
+  if (cp && s.conflicts > 0) cp.innerHTML = `<span class="status-pill pill-red"><span class="pill-dot"></span>${s.conflicts} Conflito</span>`;
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+
+  const view = document.getElementById('view-' + id);
+  if (view) view.classList.add('active');
+
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').includes(id)) t.classList.add('active');
+  });
+  document.querySelectorAll('.sidebar-item').forEach(i => {
+    if (i.getAttribute('onclick') && i.getAttribute('onclick').includes(id)) i.classList.add('active');
+  });
+}
+
+function filterTeam(btn, status) {
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid('agent-grid-team', status);
+}
+
+// ══════════════════════════════════════════
+// SIDEBAR COLLAPSE
+// ══════════════════════════════════════════
+function toggleSidebar() {
+  const app = document.querySelector('.app');
+  const btn = document.getElementById('sidebar-toggle');
+  if (!app) return;
+  const collapsed = app.classList.toggle('sidebar-collapsed');
+  if (btn) btn.title = collapsed ? 'Expandir menu' : 'Recolher menu';
+}
+
+// ══════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════
+function openModal(id) {
+  const a = AGENTS.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('m-name').textContent = a.name;
+  document.getElementById('m-role').textContent = a.role;
+  document.getElementById('m-status-chip').innerHTML = chip(a.status);
+  document.getElementById('m-task').textContent = a.task || 'Aguardando delegação';
+  document.getElementById('m-prio').innerHTML = pchip(a.priority);
+  document.getElementById('m-time').textContent = a.time;
+  document.getElementById('m-skills').innerHTML = a.skills.map(s =>
+    `<span class="tag-item">${s}</span>`).join('');
+  const ev = EVENTS.filter(e => e.agent === a.name).slice(0, 4);
+  document.getElementById('m-activity').innerHTML = ev.length
+    ? ev.map(e => `<div style="padding:4px 0;border-bottom:1px solid var(--border-l);">${e.time} — ${e.text}</div>`).join('')
+    : '<div style="color:var(--ink-3)">Sem atividade recente</div>';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ══════════════════════════════════════════
+// TIMESTAMP
+// ══════════════════════════════════════════
+function updateTs() {
+  const el = document.getElementById('last-update');
+  if (el) el.textContent = new Date().toLocaleTimeString('pt-BR');
+}
+setInterval(updateTs, 30000);
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+function init() {
+  renderStats();
+  renderGrid('agent-grid-ov');
+  renderGrid('agent-grid-team');
+  renderFeed('feed-ov');
+  renderHealth('health-ov');
+  renderHealth('health-sys');
+  renderKanban();
+  renderMatrix();
+  renderConflicts();
+  renderBlockers();
+  renderDecisions();
+  renderPlan();
+  renderDelegations();
+  renderUtil();
+  renderBlockedOrch();
+  renderAttention();
+  renderCredentials();
+  renderPlatforms();
+  renderCron();
+  renderSessions();
+  renderPlugins();
+  renderWebhooks();
+  renderMcp();
+  renderServices();
+  updateTs();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
