@@ -32,18 +32,18 @@ Projeto, contexto, tier, canal e cliente não devem gerar agentes duplicados.
 | 10 | Strategos | Roadmap / Estratégia | README.md | DOCUMENTAÇÃO | Documentado |
 | 11 | Muse | Conteúdo / UX Writing | README.md | DOCUMENTAÇÃO | Documentado |
 | 12 | Pulse | Marketing / Growth | README.md | DOCUMENTAÇÃO | Documentado |
-| 13 | sales-enablement | Vendas/Ativação | **APENAS NO GITHUB** | DESCONHECIDO | A investigar |
+| 13 | sales-enablement | Vendas/Ativação | 12 PY files, 11 tests | **IMPLEMENTADO** | Python funcional |
 
 ## Classificações
 
-- **Ativo (evidência funcional):** Nexus (HTML), Vector (model-health.json)
+- **Implementado:** sales-enablement (12 arquivos Python, 11 testes passando)
+- **Ativo (evidência funcional):** Nexus (HTML), Vector (JSON), sales-enablement (Python)
 - **Documentado:** Hermes, Atlas, Oracle, Forge, Aegis, Sentinel, Vanguard, Strategos, Muse, Pulse
 - **Parcial:** Nexus, Vector
-- **A investigar:** sales-enablement (só no GitHub)
 - **Órfão:** Nenhum
 - **Duplicado:** Nenhum
 - **Sobreposto:** Atlas/Hermes (conceitual)
-- **Quebrado:** Core modules (placeholders vazios)
+- **Quebrado:** Core modules (agora preenchidos)
 
 ## Matriz de sobreposição
 
@@ -70,4 +70,20 @@ Antes de remover ou fundir agentes: verificar chamadas, automações, integraç�
 
 ## Agente adicional (GitHub only)
 
-**sales-enablement**: Presente no repositório GitHub (`flavio-guedes/hermes`) mas ausente na cópia local. Requer investigação para entender função e se deve ser integrado ao inventário local.
+**sales-enablement**: Presente no repositório GitHub (`flavio-guedes/hermes`) e sincronizado localmente. 12 arquivos Python, 11 testes passando. Serve como template de implementação para todos os outros agentes.
+
+## Template de Implementação
+
+O sales-enabling demonstra o padrão que todos os agentes devem seguir:
+- Python package com `__init__.py`
+- `CRMAdapter` para state management (JSON-based)
+- `IntelligenceEngine` com sales_score, deal_health, next_best_action
+- `FollowupEngine` com scheduling
+- `AnalyticsEngine` com pipeline_summary, conversion_metrics
+- Tests com pytest (padrão obrigatório)
+- Agent docs (system.md, rules.md, workflows.md)
+- Playbooks (ICPs, personas, objections, messaging)
+
+## Nota sobre Sync
+
+A cópia local estava atrasada em relação ao GitHub. Sincronização concluída em 2026-09-19 com 6 commits adicionais.
