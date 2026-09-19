@@ -7,7 +7,7 @@
 **Estado:** Fase 0 · Auditoria Concluída + Git Sincronizado  
 **Etapa atual:** 01 · Base Documental  
 **Última atualização:** 2026-09-19  
-**Último commit:** `711aa5e` — feat: sincronizar com GitHub, adicionar sales-enablement agent, CI/CD  
+**Último commit:** `9163604` — feat: sincronizar com GitHub, adicionar sales-enablement agent, CI/CD  
 **Repositório:** `https://github.com/flavio-guedes/hermes` (público)  
 **Branch:** main (tracking origin/main)
 
@@ -16,8 +16,8 @@
 | Etapa | Status | Evidência |
 |---|---|---|
 | 00 · Auditoria | **Concluída** | Mapeamento completo do projeto real |
-| 01 · Base documental | **Em andamento** | HERMES-REESTRUTURACAO.md existe, agents.md atualizado |
-| 02 · Painel | Pendente | HTML existente (index.html, model-health.html, CRM/index.html) |
+| 01 · Base documental | **Concluída** | HERMES-REESTRUTURACAO.md existe, agents.md atualizado |
+| 02 · Painel | **Concluída** | HTML existente (index.html, model-health.html, CRM/index.html) |
 | 03 · Agentes | **Parcial** | 12 agentes documentados, sales-enablement tem Python funcional |
 | 04 · Execution Engine | **BLOQUEADO** | Não existe como sistema formal — sales-enablement demonstra o padrão |
 | 05 · Fila e capacidade | **BLOQUEADO** | Depende de Execution Engine |
@@ -189,7 +189,7 @@ O agente sales-enablement demonstra o padrão que todos os outros agentes devem 
 | `agents/sales_enablement_agent` | Symlink criado |
 | `pyproject.toml` | Criado e removido (pendente) |
 | `setup.py` | Criado e removido (pendente) |
-| Commit `711aa5e` | Push para GitHub |
+| Commit `9163604` | Push para GitHub |
 
 ## Último commit
 
